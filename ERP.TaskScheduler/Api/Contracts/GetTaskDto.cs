@@ -1,18 +1,18 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using ERP.TaskScheduler.Models;
 
-namespace ERP.TaskScheduler.Models;
+namespace ERP.TaskScheduler.Api.Contracts;
 
-public class ScheduledTask
+public class GetTaskDto
 {
-    [Key] public int Id { get; set; }
-    
+    public int Id { get; set; }
+
     /// <summary>
     /// Интервал повторения задачи (если не задан, то задача будет выполнена только один раз)
     /// </summary>
-    public int RepeatIntervalMinutes { get; set; }
-    
+    public int RepeatIntervalMinutes { get; set; } = 0;
+
     /// <summary>
-    /// Запланированная дата запуска задачи
+    /// Дата запуска задачи
     /// </summary>
     public DateTime ExecuteAt { get; set; }
     
@@ -20,9 +20,4 @@ public class ScheduledTask
     public ScheduledTaskStatus Status { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
-    
-    /// <summary>
-    /// История статусов задачи
-    /// </summary>
-    public ICollection<TaskStatus> History { get; set; } = new List<TaskStatus>();
 }
