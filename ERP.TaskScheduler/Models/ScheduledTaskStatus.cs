@@ -3,14 +3,14 @@
 public enum ScheduledTaskStatus
 {
     /// <summary>
+    /// Задача ожидает активации
+    /// </summary>
+    Disabled,
+    
+    /// <summary>
     /// Задача спланирована для запуска и ожидает времени начала выполнения
     /// </summary>
     WaitingToRun,
-
-    /// <summary>
-    /// Задача была отменена до запуска
-    /// </summary>
-    Declined,
 
     /// <summary>
     /// Задача запущена
