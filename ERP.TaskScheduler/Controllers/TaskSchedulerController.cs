@@ -18,9 +18,9 @@ public class TaskSchedulerController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<GetTaskDto>>> GetTasks()
+    public async Task<IActionResult> GetTasks()
     {
-        return await _dbContext.Tasks.Select((t) => new GetTaskDto
+        var response = await _dbContext.Tasks.Select((t) => new GetTaskDto
         {
             Id = t.Id,
             RepeatIntervalMinutes = t.RepeatIntervalMinutes,
@@ -30,10 +30,12 @@ public class TaskSchedulerController : ControllerBase
             CreatedAt = t.CreatedAt,
             UpdatedAt = t.UpdatedAt,
         }).ToListAsync();
+
+        return Ok(response);
     }
 
     [HttpPost]
-    public async Task<ActionResult> AddQuestion([FromBody] CreateTaskDto createTaskDto)
+    public async Task<IActionResult> AddQuestion([FromBody] CreateTaskDto createTaskDto)
     {
         if (createTaskDto == null)
             return BadRequest();
@@ -50,13 +52,13 @@ public class TaskSchedulerController : ControllerBase
         await _dbContext.Tasks.AddAsync(task);
         await _dbContext.SaveChangesAsync();
 
-        return Ok();
+        return Ok(task);
     }
 
     [HttpPost("test")]
     public async Task<ActionResult> Test()
     {
-        await _dbContext.Tasks.AddAsync(new ScheduledTask
+        var testTask = await _dbContext.Tasks.AddAsync(new ScheduledTask
         {
             RepeatIntervalMinutes = (int)TimeSpan.Parse("12:23:43").TotalMinutes,
             ExecuteAt = DateTime.UtcNow.AddDays(3),
@@ -67,6 +69,6 @@ public class TaskSchedulerController : ControllerBase
         });
         await _dbContext.SaveChangesAsync();
 
-        return Ok();
+        return Ok(testTask);
     }
 }
