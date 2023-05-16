@@ -1,4 +1,6 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using ERP.TaskScheduler.Models;
+using Microsoft.EntityFrameworkCore;
+using TaskStatus = ERP.TaskScheduler.Models.TaskStatus;
 
 namespace ERP.TaskScheduler.Database;
 
@@ -8,4 +10,7 @@ public class AppDbContext : DbContext
     {
         
     }
+
+    public DbSet<ScheduledTask> Tasks { get; set; }
+    public DbSet<TaskStatus> History { get; set; }
 }

@@ -7,8 +7,9 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.AddDbContext<AppDbContext>(opt =>
-    opt.UseNpgsql(builder.Configuration.GetConnectionString("DbConnection")));
+builder.Services.AddDbContext<AppDbContext>(opt => opt
+    .UseNpgsql(builder.Configuration.GetConnectionString("DbConnection"))
+    .UseSnakeCaseNamingConvention());
 
 var app = builder.Build();
 
