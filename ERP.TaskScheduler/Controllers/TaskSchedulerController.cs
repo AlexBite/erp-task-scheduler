@@ -34,7 +34,7 @@ public class TaskSchedulerController : ControllerBase
         return Ok(response);
     }
 
-    [HttpGet]
+    [HttpGet("{id:int}")]
     public async Task<IActionResult> Get(int id)
     {
         var task = await _dbContext.FindAsync<ScheduledTask>(id);
@@ -62,7 +62,7 @@ public class TaskSchedulerController : ControllerBase
         return Ok(task);
     }
 
-    [HttpDelete]
+    [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete([FromQuery] int id)
     {
         var task = _dbContext.Attach(new ScheduledTask() { Id = id });
@@ -71,7 +71,7 @@ public class TaskSchedulerController : ControllerBase
         return Ok();
     }
 
-    [HttpPost("run")]
+    [HttpPost("{id:int}/run")]
     public async Task<IActionResult> Run([FromQuery] int id)
     {
         var task = await _dbContext.FindAsync<ScheduledTask>(id);
@@ -79,6 +79,7 @@ public class TaskSchedulerController : ControllerBase
             return NotFound();
         
         task.Status = ScheduledTaskStatus.WaitingToRun;
+        task.ExecuteAt = DateTime.UtcNow;
         await _dbContext.SaveChangesAsync();
         return Ok(task);
     }

@@ -9,17 +9,14 @@ public class SchedulerBackgroundService : BackgroundService
     private readonly TimeSpan _period = TimeSpan.FromMinutes(1);
     private readonly ILogger<SchedulerBackgroundService> _logger;
     private readonly IServiceScopeFactory _factory;
-    private readonly AppDbContext _dbContext;
     public bool IsEnabled { get; set; }
 
     public SchedulerBackgroundService(
         ILogger<SchedulerBackgroundService> logger,
-        IServiceScopeFactory factory,
-        AppDbContext dbContext)
+        IServiceScopeFactory factory)
     {
         _logger = logger;
         _factory = factory;
-        _dbContext = dbContext;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -43,7 +40,10 @@ public class SchedulerBackgroundService : BackgroundService
         if (!IsEnabled)
             return;
         
-        var waitingTasks = await _dbContext.Tasks
+        await using var asyncScope = _factory.CreateAsyncScope();
+        var dbContext = asyncScope.ServiceProvider.GetRequiredService<AppDbContext>();
+        
+        var waitingTasks = await dbContext.Tasks
             .Where((t) => t.Status == ScheduledTaskStatus.WaitingToRun)
             .Where((t) => t.ExecuteAt <= DateTime.UtcNow)
             .ToListAsync(cancellationToken: stoppingToken);
@@ -53,6 +53,6 @@ public class SchedulerBackgroundService : BackgroundService
         foreach (var t in waitingTasks)
             t.Status = ScheduledTaskStatus.Running;
 
-        await _dbContext.SaveChangesAsync(stoppingToken);
+        await dbContext.SaveChangesAsync(stoppingToken);
     }
 }
