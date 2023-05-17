@@ -15,7 +15,7 @@ public class RabbitMqClient : IRabbitMqClient, IDisposable
     private readonly IConnection _connection;
     private readonly IModel _channel;
 
-    public RabbitMqClient()
+    public RabbitMqClient(ILogger<RabbitMqClient> logger)
     {
         var factory = new ConnectionFactory()
         {
@@ -24,10 +24,16 @@ public class RabbitMqClient : IRabbitMqClient, IDisposable
 
         _connection = factory.CreateConnection();
         _channel = _connection.CreateModel();
+        _channel.ConfirmSelect();
         _channel.QueueDeclare(queue: "TasksQueue",
             durable: false,
             exclusive: false,
             autoDelete: false);
+        
+        _channel.BasicAcks += (sender, args) =>
+        {
+            logger.LogInformation("{Sender}, {@Args}", sender, args);
+        };
     }
 
     public void SendMessage(object obj)
@@ -40,11 +46,14 @@ public class RabbitMqClient : IRabbitMqClient, IDisposable
     {
         var body = Encoding.UTF8.GetBytes(message);
 
+        var properties = _channel.CreateBasicProperties();
+        properties.DeliveryMode = 2; // Persistent message
+        properties.CorrelationId = 51434.ToString();
         _channel.BasicPublish(exchange: "",
             routingKey: "TasksQueue",
-            basicProperties: null,
+            basicProperties: properties,
+            mandatory: true,
             body: body);
-        
     }
 
     public void Dispose()

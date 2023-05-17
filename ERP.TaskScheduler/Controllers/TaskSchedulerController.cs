@@ -1,4 +1,5 @@
-﻿using ERP.TaskScheduler.Api.Contracts;
+﻿using System.Text.Json;
+using ERP.TaskScheduler.Api.Contracts;
 using ERP.TaskScheduler.Clients;
 using ERP.TaskScheduler.Database;
 using ERP.TaskScheduler.Models;
@@ -94,7 +95,7 @@ public class TaskSchedulerController : ControllerBase
     {
         var testTask = await _dbContext.Tasks.AddAsync(new ScheduledTask
         {
-            RepeatIntervalMinutes = (int)new TimeSpan(0, 0, 0, new Random().Next(86400)).TotalMinutes,
+            RepeatIntervalMinutes = 10,
             ExecuteAt = DateTime.UtcNow.AddDays(1),
             Comment = "Тестовая задача",
             Status = ScheduledTaskStatus.WaitingForActivation,
@@ -103,8 +104,8 @@ public class TaskSchedulerController : ControllerBase
         });
         await _dbContext.SaveChangesAsync();
         
-        _mqClient.SendMessage(testTask.Entity);
+        _mqClient.SendMessage("ping");
 
-        return Ok(testTask);
+        return Ok(testTask.Entity);
     }
 }
