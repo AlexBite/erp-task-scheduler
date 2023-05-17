@@ -1,3 +1,4 @@
+using ERP.TaskScheduler.Clients;
 using ERP.TaskScheduler.Database;
 using ERP.TaskScheduler.Services;
 using Microsoft.EntityFrameworkCore;
@@ -14,6 +15,7 @@ builder.Services.AddDbContext<AppDbContext>(opt => opt
 builder.Services.AddSingleton<SchedulerBackgroundService>();
 builder.Services.AddHostedService(
     provider => provider.GetRequiredService<SchedulerBackgroundService>());
+builder.Services.AddSingleton<IRabbitMqClient, RabbitMqClient>();
 
 var app = builder.Build();
 

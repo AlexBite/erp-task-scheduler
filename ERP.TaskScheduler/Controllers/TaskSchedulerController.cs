@@ -1,4 +1,5 @@
 ﻿using ERP.TaskScheduler.Api.Contracts;
+using ERP.TaskScheduler.Clients;
 using ERP.TaskScheduler.Database;
 using ERP.TaskScheduler.Models;
 using Microsoft.AspNetCore.Mvc;
@@ -11,10 +12,14 @@ namespace ERP.TaskScheduler.Controllers;
 public class TaskSchedulerController : ControllerBase
 {
     private readonly AppDbContext _dbContext;
+    private readonly IRabbitMqClient _mqClient;
 
-    public TaskSchedulerController(AppDbContext dbContext)
+    public TaskSchedulerController(
+        AppDbContext dbContext,
+        IRabbitMqClient mqClient)
     {
         _dbContext = dbContext;
+        _mqClient = mqClient;
     }
 
     [HttpGet("list")]
@@ -77,7 +82,7 @@ public class TaskSchedulerController : ControllerBase
         var task = await _dbContext.FindAsync<ScheduledTask>(id);
         if (task is null)
             return NotFound();
-        
+
         task.Status = ScheduledTaskStatus.WaitingToRun;
         task.ExecuteAt = DateTime.UtcNow;
         await _dbContext.SaveChangesAsync();
@@ -89,14 +94,16 @@ public class TaskSchedulerController : ControllerBase
     {
         var testTask = await _dbContext.Tasks.AddAsync(new ScheduledTask
         {
-            RepeatIntervalMinutes = (int)TimeSpan.Parse("12:23:43").TotalMinutes,
-            ExecuteAt = DateTime.UtcNow.AddDays(3),
+            RepeatIntervalMinutes = (int)new TimeSpan(0, 0, 0, new Random().Next(86400)).TotalMinutes,
+            ExecuteAt = DateTime.UtcNow.AddDays(1),
             Comment = "Тестовая задача",
             Status = ScheduledTaskStatus.WaitingForActivation,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow,
         });
         await _dbContext.SaveChangesAsync();
+        
+        _mqClient.SendMessage(testTask.Entity);
 
         return Ok(testTask);
     }
