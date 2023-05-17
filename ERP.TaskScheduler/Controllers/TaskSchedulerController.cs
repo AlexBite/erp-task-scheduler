@@ -63,7 +63,7 @@ public class TaskSchedulerController : ControllerBase
     }
 
     [HttpDelete("{id:int}")]
-    public async Task<IActionResult> Delete([FromQuery] int id)
+    public async Task<IActionResult> Delete(int id)
     {
         var task = _dbContext.Attach(new ScheduledTask() { Id = id });
         task.State = EntityState.Deleted;
@@ -72,7 +72,7 @@ public class TaskSchedulerController : ControllerBase
     }
 
     [HttpPost("{id:int}/run")]
-    public async Task<IActionResult> Run([FromQuery] int id)
+    public async Task<IActionResult> Run(int id)
     {
         var task = await _dbContext.FindAsync<ScheduledTask>(id);
         if (task is null)
