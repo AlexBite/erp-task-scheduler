@@ -1,4 +1,5 @@
 using ERP.TaskScheduler.Database;
+using ERP.TaskScheduler.Services;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -10,6 +11,9 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<AppDbContext>(opt => opt
     .UseNpgsql(builder.Configuration.GetConnectionString("DbConnection"))
     .UseSnakeCaseNamingConvention());
+builder.Services.AddSingleton<SchedulerBackgroundService>();
+builder.Services.AddHostedService(
+    provider => provider.GetRequiredService<SchedulerBackgroundService>());
 
 var app = builder.Build();
 
