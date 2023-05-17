@@ -17,8 +17,8 @@ public class TaskSchedulerController : ControllerBase
         _dbContext = dbContext;
     }
 
-    [HttpGet]
-    public async Task<IActionResult> GetTasks()
+    [HttpGet("list")]
+    public async Task<IActionResult> GetList()
     {
         var response = await _dbContext.Tasks.Select((t) => new GetTaskDto
         {
@@ -34,8 +34,15 @@ public class TaskSchedulerController : ControllerBase
         return Ok(response);
     }
 
+    [HttpGet]
+    public async Task<IActionResult> Get(int id)
+    {
+        var task = await _dbContext.FindAsync<ScheduledTask>(id);
+        return Ok(task);
+    }
+
     [HttpPost]
-    public async Task<IActionResult> AddQuestion([FromBody] CreateTaskDto createTaskDto)
+    public async Task<IActionResult> Add([FromBody] CreateTaskDto createTaskDto)
     {
         if (createTaskDto == null)
             return BadRequest();
@@ -45,13 +52,34 @@ public class TaskSchedulerController : ControllerBase
             RepeatIntervalMinutes = createTaskDto.RepeatIntervalMinutes,
             ExecuteAt = createTaskDto.ExecuteAt,
             Comment = createTaskDto.Comment,
-            Status = ScheduledTaskStatus.Disabled,
+            Status = ScheduledTaskStatus.WaitingForActivation,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow,
         };
         await _dbContext.Tasks.AddAsync(task);
         await _dbContext.SaveChangesAsync();
 
+        return Ok(task);
+    }
+
+    [HttpDelete]
+    public async Task<IActionResult> Delete([FromQuery] int id)
+    {
+        var task = _dbContext.Attach(new ScheduledTask() { Id = id });
+        task.State = EntityState.Deleted;
+        await _dbContext.SaveChangesAsync();
+        return Ok();
+    }
+
+    [HttpPost("run")]
+    public async Task<IActionResult> Run([FromQuery] int id)
+    {
+        var task = await _dbContext.FindAsync<ScheduledTask>(id);
+        if (task is null)
+            return NotFound();
+        
+        task.Status = ScheduledTaskStatus.WaitingToRun;
+        await _dbContext.SaveChangesAsync();
         return Ok(task);
     }
 
@@ -63,7 +91,7 @@ public class TaskSchedulerController : ControllerBase
             RepeatIntervalMinutes = (int)TimeSpan.Parse("12:23:43").TotalMinutes,
             ExecuteAt = DateTime.UtcNow.AddDays(3),
             Comment = "Тестовая задача",
-            Status = ScheduledTaskStatus.Disabled,
+            Status = ScheduledTaskStatus.WaitingForActivation,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow,
         });

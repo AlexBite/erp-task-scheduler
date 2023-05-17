@@ -5,25 +5,25 @@ public enum ScheduledTaskStatus
     /// <summary>
     /// Задача ожидает активации
     /// </summary>
-    Disabled,
+    WaitingForActivation = 0,
     
     /// <summary>
     /// Задача спланирована для запуска и ожидает времени начала выполнения
     /// </summary>
-    WaitingToRun,
+    WaitingToRun = 1,
 
     /// <summary>
     /// Задача запущена
     /// </summary>
-    Running,
+    Running = 2,
 
     /// <summary>
     /// Задача успешно завершила выполнение
     /// </summary>
-    Completed,
+    Completed = 3,
 
     /// <summary>
     /// Задача неудачно завершила выполнение
     /// </summary>
-    Faulted
+    Faulted = 4
 }
