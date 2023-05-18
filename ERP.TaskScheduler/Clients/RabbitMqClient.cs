@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Collections.Concurrent;
+using System.Text;
 using System.Text.Json;
 using RabbitMQ.Client;
 
@@ -15,6 +16,11 @@ public class RabbitMqClient : IRabbitMqClient, IDisposable
     private readonly IConnection _connection;
     private readonly IModel _channel;
 
+    // <delivery tag, message>
+    private readonly Dictionary<ulong, object> _tagMsgDict = new();
+    public EventHandler<object> MessageAcked;
+    public EventHandler<object> MessageNacked;
+
     public RabbitMqClient(ILogger<RabbitMqClient> logger)
     {
         var factory = new ConnectionFactory()
@@ -29,10 +35,19 @@ public class RabbitMqClient : IRabbitMqClient, IDisposable
             durable: false,
             exclusive: false,
             autoDelete: false);
-        
+
         _channel.BasicAcks += (sender, args) =>
         {
-            logger.LogInformation("{Sender}, {@Args}", sender, args);
+            logger.LogInformation("Message ack: {Sender}, {@Args}", sender, args);
+            if (_tagMsgDict.TryGetValue(args.DeliveryTag, out var value))
+                MessageAcked?.Invoke(this, value);
+        };
+
+        _channel.BasicNacks += (sender, args) =>
+        {
+            logger.LogInformation("Message nack: {Sender}, {@Args}", sender, args);
+            if (_tagMsgDict.TryGetValue(args.DeliveryTag, out var value))
+                MessageNacked?.Invoke(this, value);
         };
     }
 
@@ -49,6 +64,8 @@ public class RabbitMqClient : IRabbitMqClient, IDisposable
         var properties = _channel.CreateBasicProperties();
         properties.DeliveryMode = 2; // Persistent message
         properties.CorrelationId = 51434.ToString();
+        var publishTag = _channel.NextPublishSeqNo;
+        _tagMsgDict[publishTag] = message;
         _channel.BasicPublish(exchange: "",
             routingKey: "TasksQueue",
             basicProperties: properties,
